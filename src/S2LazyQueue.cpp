@@ -82,7 +82,6 @@ struct Queue{
 	int head,size,tail, level;
 	Queue* Q;	
 	void push(Node item){
-		//printf("%d push %d----\n",level, item.key);
 		Node *cur = arr+tail;
 		item.info = ((item.info>>2)<<2)|level;
 		if (head==-1){
@@ -104,7 +103,6 @@ struct Queue{
 		}
 	}
 	void pop(){
-		//printf("%d pop\n",level);
 		Node rec = arr[head++];
 		if (head==size)
 			head = 0;
