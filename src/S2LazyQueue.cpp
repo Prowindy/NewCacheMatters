@@ -2,6 +2,7 @@
 #include <map>
 #include <stack>
 #include <unordered_map>
+#include <clock.h>
 using namespace std;
 const long long MaxSpace = 3LL*1024*1024*1024; //Unit: Kb
 
@@ -21,11 +22,52 @@ int leastCntQ[MaxQueueCnt+10] = {
 	5,
 	41
 };
+// space for every layer.
+double SpaceRatio[MaxQueueCnt+10] = {
+	0.7,
+	0.3
+};
+
+//total space under this layer.
+double SummaryRatio[MaxQueueCnt + 10] = {
+	0.0,
+	0.7
+};
+
+//the ratio who can stay in current layer.
+const double StayRatio = 0.5;
+
+//Adjust the coming element's Count to the upper bound of this layer.
+int MaxCntInLayer[MaxQueueCnt + 10] ;
+
 
 struct Node {
 	unsigned int key;
 	unsigned int info;
 };
+
+
+const int MaxRecCount = 1000;
+struct fenwickTree{
+	int recordTree[MaxRecCount+1];
+	
+	int add(int x, int val){
+		for (int i = x; i<=MaxRecCount; i+= i&(-i))
+			recordTree[i]+=val;
+	}
+	
+	int getSum(int x){
+		int ret = 0;
+		for (int  i = x; i> 0; i-= i&(-i))
+			ret+= recordTree[i];
+		return ret;
+	}
+	
+}fwTree;
+
+//calculate the partial summary per second.
+long long CntSum[MaxRecCount+1];
+long long NumInCnt[MaxRecCount +1 ];
 
 unordered_map<unsigned int, Node *> hashMap;
 int CountStart = 0;
@@ -63,21 +105,30 @@ struct Queue{
 		if (head==size)
 			head = 0;
 		int cnt = rec.info>>2, i;
-		
+		double less_cnt = CntSum[cnt];
+		double less_ratio = less_cnt / MaxUnits;
 		//check if its level will move up
-		for (i = MaxQueueCnt-1; i>level; i--)
-			if (cnt>=leastCntQ[i])
+		for (i = MaxQueueCnt-1; i>=level; i--)
+			if (less_ratio >= SummarySpace[i])
 				break;
 		if (i>level){
 			//level up
 			Q[i].push(rec);
+		}else if (i==level && less_ratio >= SummarySpace[i] + SpaceRatio[i]*StayRatio){
+			//Stay in this level
+			Q[i].push(rec);
+			
 		}else if (level>0){
 			//level down
 			//avoid infinite loop, decrease its count below current level
-			rec.info = (leastCntQ[level]-1)<<2;
+			NumInCnt[rec.info>>2] --;
+			rec.info &= (1<<2)-1;
+			rec.info |= MaxCntInLayer[level-1]<<2;
+			NumInCnt[rec.info>>2] ++;
 			Q[level-1].push(rec);
 		}else {
 			//move out
+			NumInCnt[rec.info>>2] --;
 			hashMap.erase(rec.key);
 			CountStart = 1;
 		}
@@ -97,13 +148,31 @@ int update(unsigned int elem){
 		Node tmp;
 		tmp.key= elem;
 		tmp.info = 1<<2;
+		NumInCnt[tmp.info>>2] ++;
 		Q[0].push(tmp);
 		return 0;
 	}else {
 		//hit
 		Node* cur = hashMap[elem];
+		NumInCnt[cur->info>>2] --;
 		cur->info +=(1<<2);
+		if ((cur->info>>2)>MaxRecCount){
+			cur->info = (MaxRecCount<<2) + (cur->info&((1<<2)-1));
+		}
+		NumInCnt[cur->info>>2] ++;
 		return 1;
+	}
+		
+}
+
+void reCalcCnt(){
+	SumCnt[0] = 0;
+	int level = 0;
+	for (int i = 1; i <= MaxRecCount; i++){
+		SumCnt[i] = SumCnt[i-1] + NumInCnt[i];
+		if (SumCnt[i] >= MaxRecCount * SummaryRatio[level+1])
+			level++;
+		MaxCntInLayer[level] = i;
 	}
 		
 }
@@ -116,6 +185,9 @@ void init(){
 		Q[i].arr = (Node *)malloc(sizeof(Node *)*Q[i].size);
 		Q[i].Q = Q;
 	}
+	memset(fwTree.recordTree, 0, sizeof( fwTree.recordTree));
+	memset(NumInCnt, 0, sizeof( NumInCnt ));
+	
 }
 int main(){
 	init();
@@ -123,32 +195,38 @@ int main(){
 	long long totCnt = 0, missCnt = 0;
 	unsigned int elem;
 	int debug = 1;
-long long cnt = 0;
+	long long cnt = 0;
+	clock_t lastTime = 0, curTime;
 	while(scanf("%u",&elem)!=EOF){
 		//printf("scan ------%d\n",elem);
 		if (update(elem)==0){
 			if (CountStart)
 				missCnt++;
 		}
+		curTime = clock();
+		if (curTime-lastTime>CLOCKS_PER_SEC){
+			reCalcCnt();
+			lastTime = curTime;
+		}
 		if (CountStart)
 			totCnt++;
-if (debug==2)
-		for (int j,i = 0;i < MaxQueueCnt; i++){
-			   for (j = 0;j < EachSizeQ[i];j++){
-		printf("%d ", Q[i].arr[j].key);
+		if (debug==2)
+				for (int j,i = 0;i < MaxQueueCnt; i++){
+					   for (j = 0;j < EachSizeQ[i];j++){
+							printf("%d ", Q[i].arr[j].key);
+						}
+						printf("\n");
+				}
+	
+		if (cnt%1000000==0){
+								printf("%lld miss: %lld tot: %lld\n", cnt, missCnt, totCnt);
+				for (int i = 0;debug&&i<MaxQueueCnt; i++)
+					printf("%d; ", (Q[i].tail-Q[i].head-1+Q[i].size)%Q[i].size);
+				printf("---%d\n",hashMap.size());
 		}
-		printf("\n");
-		}
-
-if (cnt%1000000==0){
-                        printf("%lld miss: %lld tot: %lld\n", cnt, missCnt, totCnt);
-		for (int i = 0;debug&&i<MaxQueueCnt; i++)
-			printf("%d; ", (Q[i].tail-Q[i].head-1+Q[i].size)%Q[i].size);
-		printf("---%d\n",hashMap.size());
-}
 
 
-cnt++;
+		cnt++;
 	}
 	printf("Hit: %lld\nMiss: %lld\nTotal: %lld\nThe hit rate is %lf\n", totCnt-missCnt, missCnt, totCnt, (totCnt-missCnt)*1.0/totCnt);
 	
