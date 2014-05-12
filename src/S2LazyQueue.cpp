@@ -2,9 +2,10 @@
 #include <map>
 #include <stack>
 #include <unordered_map>
-#include <clock.h>
+#include <time.h>
+#include <string.h>
 using namespace std;
-const long long MaxSpace = 3LL*1024*1024*1024; //Unit: Kb
+const long long MaxSpace = 2LL*1024*1024*1024; //Unit: Kb
 
 const int MaxUnits = MaxSpace/32;
 
@@ -36,6 +37,9 @@ double SummaryRatio[MaxQueueCnt + 10] = {
 
 //the ratio who can stay in current layer.
 const double StayRatio = 0.5;
+
+//the ratio who can upstair under discarding.
+const double UpRatio = 0.75;
 
 //Adjust the coming element's Count to the upper bound of this layer.
 int MaxCntInLayer[MaxQueueCnt + 10] ;
@@ -95,7 +99,7 @@ struct Queue{
 			*cur = item;
 			hashMap[cur->key] = cur;
 			tail++;
-			if (tail==size)
+			if (tail==size)    
 				tail = 0;
 		}
 	}
@@ -105,16 +109,16 @@ struct Queue{
 		if (head==size)
 			head = 0;
 		int cnt = rec.info>>2, i;
-		double less_cnt = CntSum[cnt];
+		double less_cnt = CntSum[cnt-1];
 		double less_ratio = less_cnt / MaxUnits;
 		//check if its level will move up
-		for (i = MaxQueueCnt-1; i>=level; i--)
-			if (less_ratio >= SummarySpace[i])
+		for (i = MaxQueueCnt-1; i>0; i--)
+			if (less_ratio >= SummaryRatio[i-1] + SpaceRatio[i-1]*UpRatio  )
 				break;
 		if (i>level){
 			//level up
 			Q[i].push(rec);
-		}else if (i==level && less_ratio >= SummarySpace[i] + SpaceRatio[i]*StayRatio){
+		}else if (i==level && less_ratio >= SummaryRatio[i] + SpaceRatio[i]*StayRatio){
 			//Stay in this level
 			Q[i].push(rec);
 			
@@ -122,8 +126,10 @@ struct Queue{
 			//level down
 			//avoid infinite loop, decrease its count below current level
 			NumInCnt[rec.info>>2] --;
+		if (MaxCntInLayer[level-1] < (rec.info>>2)){
 			rec.info &= (1<<2)-1;
 			rec.info |= MaxCntInLayer[level-1]<<2;
+}
 			NumInCnt[rec.info>>2] ++;
 			Q[level-1].push(rec);
 		}else {
@@ -166,15 +172,16 @@ int update(unsigned int elem){
 }
 
 void reCalcCnt(){
-	SumCnt[0] = 0;
+	CntSum[0] = 0;
 	int level = 0;
 	for (int i = 1; i <= MaxRecCount; i++){
-		SumCnt[i] = SumCnt[i-1] + NumInCnt[i];
-		if (SumCnt[i] >= MaxRecCount * SummaryRatio[level+1])
+		CntSum[i] = CntSum[i-1] + NumInCnt[i];
+		if (level+1 < MaxQueueCnt && CntSum[i-1] > Q[level].size)
 			level++;
 		MaxCntInLayer[level] = i;
 	}
-		
+	for (level++; level < MaxQueueCnt; level++)
+		MaxCntInLayer[level] = MaxCntInLayer[level-1];
 }
 void init(){
 	hashMap.clear();
@@ -204,7 +211,7 @@ int main(){
 				missCnt++;
 		}
 		curTime = clock();
-		if (curTime-lastTime>CLOCKS_PER_SEC){
+		if (curTime-lastTime>CLOCKS_PER_SEC||debug==2){
 			reCalcCnt();
 			lastTime = curTime;
 		}
