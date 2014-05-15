@@ -1,3 +1,12 @@
+/*
+☆ LRU
+Hit: 	5480958763
+Miss: 	1179787053
+Total:	6660745816
+FullIt:	487101878
+The hit rate is 0.822875
+*/
+
 #include <iostream>
 #include <map>
 #include <stack>

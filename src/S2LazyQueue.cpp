@@ -1,3 +1,11 @@
+/*
+☆ S2LazyQueue
+Hit: 	5626117699
+Miss: 	1308266609
+Total: 	6934384308
+The hit rate is 0.811336
+*/
+
 #include <iostream>
 #include <map>
 #include <stack>

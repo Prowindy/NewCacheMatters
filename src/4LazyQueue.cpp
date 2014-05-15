@@ -1,3 +1,12 @@
+/*
+☆ 4LazyQueue
+Hit: 	5634973350
+Miss: 	1187732644
+Total:	6822705994
+FullIt: 325141699
+The hit rate is 0.825915
+*/
+
 #include <iostream>
 #include <map>
 #include <stack>

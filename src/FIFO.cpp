@@ -1,3 +1,11 @@
+/*
+☆ FIFO
+Hit: 	5332866362
+Miss: 	1327879454
+Total: 	6660745816
+FullIt: 487101877
+The hit rate is 0.800641
+*/
 #include <iostream>
 #include <map>
 #include <stack>

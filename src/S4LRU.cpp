@@ -1,3 +1,11 @@
+/*
+☆ S4LRU
+Hit: 	5568470689
+Miss: 	1131903166
+Total: 	6700373855
+FullIt: 447473839
+The hit rate is 0.831069
+*/
 #include <iostream>
 #include <map>
 #include <stack>
