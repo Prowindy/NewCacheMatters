@@ -69,6 +69,12 @@ Total: 	6660745816
 FullIt: 487101877
 The hit rate is 0.800641
 
+☆ S2LazyQueue
+Hit: 	5626117699
+Miss: 	1308266609
+Total: 	6934384308
+The hit rate is 0.811336
+
 ☆ LRU
 Hit: 	5480958763
 Miss: 	1179787053
@@ -76,12 +82,15 @@ Total:	6660745816
 FullIt:	487101878
 The hit rate is 0.822875
 
+
 ☆ S4LRU
 Hit: 	5568470689
 Miss: 	1131903166
 Total: 	6700373855
 FullIt: 447473839
 The hit rate is 0.831069
+
+
 
 实验是模拟3T储存空间的CDN节点，离线对71亿条访问处理。
 为了保证跟线上测试的效果接近，在第一圈写满磁盘前，不统计命中率，实验表明在大约4亿多条请求后，
