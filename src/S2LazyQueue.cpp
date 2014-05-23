@@ -1,11 +1,3 @@
-/*
-☆ S2LazyQueue
-Hit: 	5626117699
-Miss: 	1308266609
-Total: 	6934384308
-The hit rate is 0.811336
-*/
-
 #include <iostream>
 #include <map>
 #include <stack>
@@ -90,6 +82,7 @@ struct Queue{
 	int head,size,tail, level;
 	Queue* Q;	
 	void push(Node item){
+		//printf("%d push %d----\n",level, item.key);
 		Node *cur = arr+tail;
 		item.info = ((item.info>>2)<<2)|level;
 		if (head==-1){
@@ -101,6 +94,8 @@ struct Queue{
 			head = 0;
 		}else if(head==tail){
 			pop();
+			if (level>0)
+				CountStart = 1;
 			push(item);
 		}else {
 			*cur = item;
@@ -111,6 +106,7 @@ struct Queue{
 		}
 	}
 	void pop(){
+		//printf("%d pop\n",level);
 		Node rec = arr[head++];
 		if (head==size)
 			head = 0;
@@ -142,7 +138,7 @@ struct Queue{
 			//move out
 			NumInCnt[rec.info>>2] --;
 			hashMap.erase(rec.key);
-			CountStart = 1;
+			//CountStart = 1;
 		}
 	}
 	bool empty(){
