@@ -5,7 +5,7 @@
 #include <time.h>
 #include <string.h>
 using namespace std;
-const long long MaxSpace = 2LL*1024*1024*1024; //Unit: Kb
+const long long MaxSpace = 3LL*1024*1024*1024; //Unit: Kb
 
 const int MaxUnits = MaxSpace/32;
 
@@ -41,6 +41,9 @@ const double StayRatio = 0.5;
 //the ratio who can upstair under discarding.
 const double UpRatio = 0.75;
 
+//the ratio who can stay by its last visit time is not far away.
+const double LastVisitRatio = 0.1;
+
 //Adjust the coming element's Count to the upper bound of this layer.
 int MaxCntInLayer[MaxQueueCnt + 10] ;
 
@@ -48,6 +51,10 @@ int MaxCntInLayer[MaxQueueCnt + 10] ;
 struct Node {
 	unsigned int key;
 	unsigned int info;
+	long long lastVisit;
+	Node(){
+		key = info = lastVisit = 0;
+	}
 };
 
 
@@ -75,14 +82,14 @@ long long NumInCnt[MaxRecCount +1 ];
 
 unordered_map<unsigned int, Node *> hashMap;
 int CountStart = 0;
-
+long long visitCnt = 0;
 struct Queue{
 
 	Node *arr;
 	int head,size,tail, level;
 	Queue* Q;	
 	void push(Node item){
-		//printf("%d push %d----\n",level, item.key);
+	//	printf("%d push %d----\n",level, item.key);
 		Node *cur = arr+tail;
 		item.info = ((item.info>>2)<<2)|level;
 		if (head==-1){
@@ -106,7 +113,7 @@ struct Queue{
 		}
 	}
 	void pop(){
-		//printf("%d pop\n",level);
+	//	printf("%d pop\n",level);
 		Node rec = arr[head++];
 		if (head==size)
 			head = 0;
@@ -117,10 +124,12 @@ struct Queue{
 		for (i = MaxQueueCnt-1; i>0; i--)
 			if (less_ratio >= SummaryRatio[i-1] + SpaceRatio[i-1]*UpRatio  )
 				break;
+		
 		if (i>level){
 			//level up
 			Q[i].push(rec);
-		}else if (i==level && less_ratio >= SummaryRatio[i] + SpaceRatio[i]*StayRatio){
+		}else if ((i==level && less_ratio >= SummaryRatio[i] + SpaceRatio[i]*StayRatio)
+			|| ((visitCnt - rec.lastVisit)<=LastVisitRatio*MaxUnits)) {
 			//Stay in this level
 			Q[i].push(rec);
 			
@@ -128,10 +137,10 @@ struct Queue{
 			//level down
 			//avoid infinite loop, decrease its count below current level
 			NumInCnt[rec.info>>2] --;
-		if (MaxCntInLayer[level-1] < (rec.info>>2)){
-			rec.info &= (1<<2)-1;
-			rec.info |= MaxCntInLayer[level-1]<<2;
-}
+			if (MaxCntInLayer[level-1] < (rec.info>>2)){
+				rec.info &= (1<<2)-1;
+				rec.info |= MaxCntInLayer[level-1]<<2;
+			}
 			NumInCnt[rec.info>>2] ++;
 			Q[level-1].push(rec);
 		}else {
@@ -150,12 +159,13 @@ struct Queue{
 
 }Q[4];
 
-int update(unsigned int elem){
+int update(unsigned int elem, long long visitTime){
 	if (hashMap.find(elem)==hashMap.end()){
 		//miss
 		Node tmp;
 		tmp.key= elem;
 		tmp.info = 1<<2;
+		tmp.lastVisit = visitTime;
 		NumInCnt[tmp.info>>2] ++;
 		Q[0].push(tmp);
 		return 0;
@@ -167,6 +177,7 @@ int update(unsigned int elem){
 		if ((cur->info>>2)>MaxRecCount){
 			cur->info = (MaxRecCount<<2) + (cur->info&((1<<2)-1));
 		}
+		cur->lastVisit = visitTime;
 		NumInCnt[cur->info>>2] ++;
 		return 1;
 	}
@@ -191,7 +202,7 @@ void init(){
 		Q[i].size = EachSizeQ[i];
 		Q[i].head = -1, Q[i].tail = 0;
 		Q[i].level = i;
-		Q[i].arr = (Node *)malloc(sizeof(Node *)*Q[i].size);
+		Q[i].arr = (Node *)malloc(sizeof(Node)*Q[i].size);
 		Q[i].Q = Q;
 	}
 	memset(fwTree.recordTree, 0, sizeof( fwTree.recordTree));
@@ -205,13 +216,15 @@ int main(){
 	unsigned int elem;
 	int debug = 1;
 	long long cnt = 0;
+	visitCnt = 0;
 	clock_t lastTime = 0, curTime;
 	while(scanf("%u",&elem)!=EOF){
 		//printf("scan ------%d\n",elem);
-		if (update(elem)==0){
+		if (update(elem, visitCnt)==0){
 			if (CountStart)
 				missCnt++;
 		}
+		visitCnt++;
 		curTime = clock();
 		if (curTime-lastTime>CLOCKS_PER_SEC||debug==2){
 			reCalcCnt();
