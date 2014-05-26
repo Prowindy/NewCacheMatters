@@ -1,3 +1,9 @@
+/* Amazing hit ratio!
+Hit: 4976941954
+Miss: 970005690
+Total: 5946947644
+The hit rate is 0.836890
+*/
 #include <iostream>
 #include <map>
 #include <stack>
