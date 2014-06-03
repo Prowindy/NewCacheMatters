@@ -11,6 +11,7 @@ The hit rate is 0.836890
 #include <time.h>
 #include <string.h>
 using namespace std;
+typedef unsigned long long ULLD;
 const long long MaxSpace = 3LL*1024*1024*1024; //Unit: Kb
 
 const int MaxUnits = MaxSpace/32;
@@ -55,9 +56,9 @@ int MaxCntInLayer[MaxQueueCnt + 10] ;
 
 
 struct Node {
-	unsigned int key;
+	ULLD key;
 	unsigned int info;
-	long long lastVisit;
+	ULLD lastVisit;
 	Node(){
 		key = info = lastVisit = 0;
 	}
@@ -83,12 +84,12 @@ struct fenwickTree{
 }fwTree;
 
 //calculate the partial summary per second.
-long long CntSum[MaxRecCount+1];
-long long NumInCnt[MaxRecCount +1 ];
+ULLD CntSum[MaxRecCount+1];
+ULLD NumInCnt[MaxRecCount +1 ];
 
-unordered_map<unsigned int, Node *> hashMap;
+unordered_map<ULLD, Node *> hashMap;
 int CountStart = 0;
-long long visitCnt = 0;
+ULLD visitCnt = 0;
 struct Queue{
 
 	Node *arr;
@@ -165,7 +166,7 @@ struct Queue{
 
 }Q[4];
 
-int update(unsigned int elem, long long visitTime){
+int update(ULLD elem, long long visitTime){
 	if (hashMap.find(elem)==hashMap.end()){
 		//miss
 		Node tmp;
@@ -218,13 +219,13 @@ void init(){
 int main(){
 	init();
 	
-	long long totCnt = 0, missCnt = 0;
-	unsigned int elem;
+	ULLD totCnt = 0, missCnt = 0;
+	ULLD elem;
 	int debug = 1;
-	long long cnt = 0;
+	ULLD cnt = 0;
 	visitCnt = 0;
 	clock_t lastTime = 0, curTime;
-	while(scanf("%u",&elem)!=EOF){
+	while(scanf("%llu",&elem)!=EOF){
 		//printf("scan ------%d\n",elem);
 		if (update(elem, visitCnt)==0){
 			if (CountStart)
