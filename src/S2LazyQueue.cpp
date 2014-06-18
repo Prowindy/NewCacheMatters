@@ -1,17 +1,8 @@
-/* Amazing hit ratio!
-Hit: 4976941954
-Miss: 970005690
-Total: 5946947644
-The hit rate is 0.836890
-*/
-#include <iostream>
-#include <map>
-#include <stack>
-#include <unordered_map>
-#include <time.h>
-#include <string.h>
+#include <S2LazyQueue.h>
 using namespace std;
+
 typedef unsigned long long ULLD;
+
 const long long MaxSpace = 3LL*1024*1024*1024; //Unit: Kb
 
 const int MaxUnits = MaxSpace/32;
@@ -58,7 +49,7 @@ int MaxCntInLayer[MaxQueueCnt + 10] ;
 struct Node {
 	ULLD key;
 	unsigned int info;
-	ULLD lastVisit;
+	long long lastVisit;
 	Node(){
 		key = info = lastVisit = 0;
 	}
@@ -84,12 +75,12 @@ struct fenwickTree{
 }fwTree;
 
 //calculate the partial summary per second.
-ULLD CntSum[MaxRecCount+1];
-ULLD NumInCnt[MaxRecCount +1 ];
+long long CntSum[MaxRecCount+1];
+long long NumInCnt[MaxRecCount +1 ];
 
 unordered_map<ULLD, Node *> hashMap;
 int CountStart = 0;
-ULLD visitCnt = 0;
+long long visitCnt = 0;
 struct Queue{
 
 	Node *arr;
@@ -107,6 +98,11 @@ struct Queue{
 			hashMap[cur->key] = cur;
 			head = 0;
 		}else if(head==tail){
+/*			if (level==0&&!Q[level+1].full()){
+				Q[level+1].push(item);
+				return ;
+			}
+*/				
 			pop();
 			if (level>0)
 				CountStart = 1;
@@ -166,7 +162,7 @@ struct Queue{
 
 }Q[4];
 
-int update(ULLD elem, long long visitTime){
+int S2LazyQueue::update(ULLD elem, long long visitTime){
 	if (hashMap.find(elem)==hashMap.end()){
 		//miss
 		Node tmp;
@@ -191,7 +187,7 @@ int update(ULLD elem, long long visitTime){
 		
 }
 
-void reCalcCnt(){
+void S2LazyQueue::heartBeat(){
 	CntSum[0] = 0;
 	int level = 0;
 	for (int i = 1; i <= MaxRecCount; i++){
@@ -203,7 +199,7 @@ void reCalcCnt(){
 	for (level++; level < MaxQueueCnt; level++)
 		MaxCntInLayer[level] = MaxCntInLayer[level-1];
 }
-void init(){
+void S2LazyQueue::init(){
 	hashMap.clear();
 	for (int i = 0;i < MaxQueueCnt; i++){
 		Q[i].size = EachSizeQ[i];
@@ -216,52 +212,13 @@ void init(){
 	memset(NumInCnt, 0, sizeof( NumInCnt ));
 	
 }
-int main(){
-	init();
-	
-	ULLD totCnt = 0, missCnt = 0;
-	ULLD elem;
-	int debug = 1;
-	ULLD cnt = 0;
-	visitCnt = 0;
-	clock_t lastTime = 0, curTime;
-	while(scanf("%llu",&elem)!=EOF){
-		//printf("scan ------%d\n",elem);
-		if (update(elem, visitCnt)==0){
-			if (CountStart)
-				missCnt++;
-		}
-		visitCnt++;
-		curTime = clock();
-		if (curTime-lastTime>CLOCKS_PER_SEC||debug==2){
-			reCalcCnt();
-			lastTime = curTime;
-		}
-		if (CountStart)
-			totCnt++;
-		if (debug==2)
-				for (int j,i = 0;i < MaxQueueCnt; i++){
-					   for (j = 0;j < EachSizeQ[i];j++){
-							printf("%d ", Q[i].arr[j].key);
-						}
-						printf("\n");
-				}
-	
-		if (cnt%1000000==0){
-								printf("%lld miss: %lld tot: %lld\n", cnt, missCnt, totCnt);
-				for (int i = 0;debug&&i<MaxQueueCnt; i++)
-					printf("%d; ", (Q[i].tail-Q[i].head-1+Q[i].size)%Q[i].size);
-				printf("---%d\n",hashMap.size());
-		}
 
-
-		cnt++;
-	}
-	printf("Hit: %lld\nMiss: %lld\nTotal: %lld\nThe hit rate is %lf\n", totCnt-missCnt, missCnt, totCnt, (totCnt-missCnt)*1.0/totCnt);
-	
+void initS2LazyQueue(CacheAlgorithm &algo){
+    algo.update = update;
+    algo.init = init;
+    algo.heartBeat = reCalcCnt;
 }
-	
-	
+
 	
 	
 	
