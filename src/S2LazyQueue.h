@@ -8,10 +8,11 @@
 #include <unordered_map>
 #include <time.h>
 #include <string.h>
-#include <cache_algorithm.h>
+#include "cache_algorithms.h"
 using namespace std;
 
-class S2LazyQueue : public CacheAlgortithm{
+
+class S2LazyQueue : public CacheAlgorithms {
 
 public :
     
