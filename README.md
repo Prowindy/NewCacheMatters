@@ -1,3 +1,5 @@
+* S2LRU的.h .cpp文件有问题，请暂时单独编译S2LazyQueue_unique_run.cpp使用
+
 NewCacheMatters
 ===============
 
